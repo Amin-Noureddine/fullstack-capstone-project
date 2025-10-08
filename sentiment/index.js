@@ -3,39 +3,35 @@ const express = require('express');
 const axios = require('axios');
 const logger = require('./logger');
 const expressPino = require('express-pino-logger')({ logger });
+const natural = require("natural");
 
-// Task 1: import the natural library
-const natural = require('natural');
-
-// Task 2: initialize the express server
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(expressPino);
 
-// Task 3: create the POST /sentiment endpoint
+// Define the sentiment analysis route
 app.post('/sentiment', async (req, res) => {
+    const { sentence } = req.query;
 
-    // Task 4: extract the sentence parameter from the request body
-    const { sentence } = req.body;
 
     if (!sentence) {
         logger.error('No sentence provided');
         return res.status(400).json({ error: 'No sentence provided' });
     }
 
-    // Initialize the sentiment analyzer
+    // Initialize the sentiment analyzer with the Natural's PorterStemmer and "English" language
     const Analyzer = natural.SentimentAnalyzer;
     const stemmer = natural.PorterStemmer;
     const analyzer = new Analyzer("English", stemmer, "afinn");
 
+    // Perform sentiment analysis
     try {
-        // Perform sentiment analysis
         const analysisResult = analyzer.getSentiment(sentence.split(' '));
 
-        // Task 5: set sentiment based on score
         let sentiment = "neutral";
+
         if (analysisResult < 0) {
             sentiment = "negative";
         } else if (analysisResult > 0.33) {
@@ -44,13 +40,10 @@ app.post('/sentiment', async (req, res) => {
 
         // Logging the result
         logger.info(`Sentiment analysis result: ${analysisResult}`);
-
-        // Task 6: send success response
+        // Responding with the sentiment analysis result
         res.status(200).json({ sentimentScore: analysisResult, sentiment: sentiment });
     } catch (error) {
         logger.error(`Error performing sentiment analysis: ${error}`);
-
-        // Task 7: send error response
         res.status(500).json({ message: 'Error performing sentiment analysis' });
     }
 });
