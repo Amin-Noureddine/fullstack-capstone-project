@@ -1,28 +1,33 @@
 // db.js
 require('dotenv').config();
-const MongoClient = require('mongodb').MongoClient;
+const { MongoClient } = require('mongodb');
 
 // MongoDB connection URL with authentication options
-let url = `${process.env.MONGO_URL}`;
-
-let dbInstance = null;
+const url = process.env.MONGO_URL;
 const dbName = "giftdb";
 
+let dbInstance = null;
+
 async function connectToDatabase() {
-    if (dbInstance){
-        return dbInstance
-    };
+    if (dbInstance) {
+        return dbInstance;
+    }
 
-    const client = new MongoClient(url);      
+    if (!url || !url.startsWith("mongodb://") && !url.startsWith("mongodb+srv://")) {
+        throw new Error("Invalid MONGO_URL in .env. Make sure it starts with 'mongodb://' or 'mongodb+srv://'");
+    }
 
-    // Task 1: Connect to MongoDB
-    // {{insert code}}
-
-    // Task 2: Connect to database giftDB and store in variable dbInstance
-    //{{insert code}}
-
-    // Task 3: Return database instance
-    // {{insert code}}
+    try {
+        console.log("Connecting to MongoDB at:", url);
+        const client = new MongoClient(url, { useUnifiedTopology: true });
+        await client.connect();
+        dbInstance = client.db(dbName);
+        console.log("Connected to database:", dbName);
+        return dbInstance;
+    } catch (error) {
+        console.error("Failed to connect to MongoDB:", error);
+        throw error;
+    }
 }
 
 module.exports = connectToDatabase;
